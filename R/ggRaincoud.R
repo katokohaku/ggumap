@@ -9,7 +9,7 @@
 #' @param scaled logical. If .data are scaled for each colmn (default = TRUE).
 #' @param .alpha numeric (0, 1). Alpha transparency scales for density plots.
 #' @param .scale numeric. Position scales for Y-axis.
-#' @param .vervose ligical. If TRUE, which colmn were converted (from factor to numeric) is printed.
+#' @param .verbose ligical. If TRUE, which colmn were converted (from factor to numeric) is printed.
 #' @param ... other options passed to theme(., ...)
 #'
 #' @examples
@@ -18,7 +18,7 @@
 #'
 #' iris %>%
 #'   select(-Species) %>%
-#'   ggRaincloud("feature distribution",.scale = 0.7 .vervose = FALSE)
+#'   ggRaincloud("feature distribution",.scale = 0.7 .verbose = FALSE)
 #' }
 #' @return a ggplots object
 #'
@@ -28,11 +28,11 @@
 #
 
 ggRaincloud <- function(.data, title = "", xlab = "", ylab = "",
-                        scaled = TRUE, .alpha = 0.3, .scale = 0.9, .vervose = TRUE, ...) {
+                        scaled = TRUE, .alpha = 0.3, .scale = 0.9, .verbose = TRUE, ...) {
   stopifnot(!missing(.data))
 
   mutate_all2 <- dplyr::mutate_all
-  if(.vervose) {
+  if(.verbose) {
     mutate_all2 <- tidylog::mutate_all
   }
 

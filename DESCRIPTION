@@ -1,6 +1,6 @@
 Package: ggumap
 Type: Package
-Title: ggplot interfase for Uniform Manifold Approximation and Projection (UMAP)
+Title: ggplot interfases for Uniform Manifold Approximation and Projection (UMAP)
 Version: 0.1.0
 Author: Satoshi Kato
 Maintainer: Satoshi Kato <kato.satoshi.0@gmail.com>
@@ -15,8 +15,9 @@ Imports:
   tibble,
   tidyr,
   tidylog,
-  purrr,
   ggplot2,
   ggridges
 Roxygen: list(markdown = TRUE)
 RoxygenNote: 6.1.1
+Suggests: 
+    testthat (>= 2.1.0)

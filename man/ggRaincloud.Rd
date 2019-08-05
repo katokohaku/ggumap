@@ -5,7 +5,7 @@
 \title{rain could plot wrapper for ggRidges package}
 \usage{
 ggRaincloud(.data, title = "", xlab = "", ylab = "", scaled = TRUE,
-  .alpha = 0.3, .scale = 0.9, .vervose = TRUE, ...)
+  .alpha = 0.3, .scale = 0.9, .verbose = TRUE, ...)
 }
 \arguments{
 \item{.data}{a data frame or a matrix}
@@ -22,7 +22,7 @@ ggRaincloud(.data, title = "", xlab = "", ylab = "", scaled = TRUE,
 
 \item{.scale}{numeric. Position scales for Y-axis.}
 
-\item{.vervose}{ligical. If TRUE, which colmn were converted (from factor to numeric) is printed.}
+\item{.verbose}{ligical. If TRUE, which colmn were converted (from factor to numeric) is printed.}
 
 \item{...}{other options passed to theme(., ...)}
 }
@@ -38,6 +38,6 @@ ggRaincloud(iris)
 
 iris \%>\%
   select(-Species) \%>\%
-  ggRaincloud("feature distribution",.scale = 0.7 .vervose = FALSE)
+  ggRaincloud("feature distribution",.scale = 0.7 .verbose = FALSE)
 }
 }

@@ -1,0 +1,289 @@
+---
+title: "ggumap"
+author: Satoshi Kato (@katokohaku)
+output: 
+  html_document:
+    keep_md: yes
+    toc: yes
+  md_document:
+    variant: markdown_github
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>",
+  message = FALSE
+)
+```
+
+
+# Overview
+
+ggplot interfaces for Uniform Manifold Approximation and Projection (UMAP), and adding clustered-labels based on hierarchical Density-based spatial clustering of applications with noise (HDBSCAN).
+
+```{r}
+uwot::tumap()
+```
+
+```{r}
+require(ggrepel)
+
+mapping.tsne$hclust <- approxcontrib.xgb.tsne.hc %>%
+  cutree(h = cut.off) %>%
+  factor()
+
+hc.cent <- mapping.tsne %>% 
+  group_by(hclust) %>%
+  select(dim1, dim2) %>% 
+  summarize_all(mean)
+
+map.tsne.labeled <- mapping.tsne %>% 
+  ggplot(aes(x = dim1, y = dim2, colour = hclust)) + 
+  geom_point(alpha = 0.3) + 
+  theme_bw() +
+  ggrepel::geom_label_repel(data = hc.cent, aes(label = hclust)) + 
+  guides(colour = FALSE)
+
+ggsave(map.tsne.labeled, filename =  "./output/image.files/420_map_tSNE_labeled.png",
+    height = 7, width = 7)
+
+```
+
+![](output/image.files/420_map_tSNE_labeled.png)
+
+
+## dimension reduction using UMAP
+
+according to :
+https://rdrr.io/cran/uwot/man/umap.html
+
+
+### non-optional
+
+```{r}
+approxcontrib.xgb.umap <- approxcontrib.xgb %>% 
+  data.frame() %>% 
+  select(-BIAS) %>%
+  uwot::umap()
+
+approxcontrib.xgb.umap %>% str
+
+mapping.umap <- data.frame(
+  id     = 1:length(prediction.xgb),
+  dim1  = approxcontrib.xgb.umap[, 1],
+  dim2  = approxcontrib.xgb.umap[, 2],
+  pred   = prediction.xgb,
+  weight = weight.app)
+# mapping.umap %>% str
+
+ggp.umap <- mapping.umap %>% 
+  ggplot(aes(x = dim1, y = dim2, colour = prediction.xgb)) + 
+    geom_point(alpha = 0.3) + theme_bw() +
+  scale_color_gradient2(midpoint=0.5, low="blue", mid="gray", high="red") + 
+  guides(colour = FALSE) + 
+  labs(title = "UMAP (without label)") 
+
+ggsave(ggp.umap, filename =  "./output/image.files/420_map_umap.png",
+       height = 5, width = 7)
+
+```
+
+![](output/image.files/420_map_umap.png)
+
+### supervised dimension reduction
+
+```{r}
+approxcontrib.xgb.sumap <- approxcontrib.xgb %>% 
+  data.frame() %>% 
+  select(-BIAS) %>%
+  uwot::umap(n_neighbors = 12,
+             learning_rate = 0.7,
+             y = prediction.xgb)
+
+# approxcontrib.xgb.sumap
+
+mapping.sumap <- data.frame(
+  id     = 1:length(prediction.xgb),
+  dim1  = approxcontrib.xgb.sumap[, 1],
+  dim2  = approxcontrib.xgb.sumap[, 2],
+  pred   = prediction.xgb,
+  weight = weight.app)
+# mapping.sumap %>% str
+
+ggp.sumap <- mapping.sumap %>% 
+  ggplot(aes(x = dim1, y = dim2, colour = prediction.xgb)) + 
+    geom_point(alpha = 0.3) + theme_bw() +
+  scale_color_gradient2(midpoint=0.5, low="blue", mid="gray", high="red") + 
+  guides(colour = FALSE) + 
+  labs(title = "supervised UMAP") 
+
+ggsave(ggp.sumap, filename = "./output/image.files/420_map_sumap.png",
+       height = 5, width = 7)
+
+```
+
+![](output/image.files/420_map_sumap.png)
+
+## Hierarchical Density-based spatial clustering of applications with noise (HDBSCAN)
+
+Reference:
+
+https://hdbscan.readthedocs.io/en/latest/how_hdbscan_works.html
+
+according to:
+
+https://cran.r-project.org/web/packages/dbscan/vignettes/hdbscan.html
+
+```{r}
+# install.packages("dbscan", dependencies = TRUE)
+require(dbscan)
+
+```
+
+`minPts` not only acts as a minimum cluster size to detect, but also as a "smoothing" factor of the density estimates implicitly computed from HDBSCAN.
+
+```{r }
+# mapping.sumap %>% str
+cl.hdbscan <- mapping.sumap %>% 
+  select(dim1, dim2) %>% 
+  hdbscan(minPts = 30)
+cl.hdbscan
+
+plot(cl.hdbscan, show_flat = TRUE)
+
+```
+
+```{r}
+# install.packages("ggrepel", dependencies = TRUE)
+require(ggrepel)
+
+mapping.sumap$hdbscan <- factor(cl.hdbscan$cluster)
+
+hdbscan.cent <- mapping.sumap %>% 
+  filter(hdbscan != 0) %>% 
+  dplyr::group_by(hdbscan) %>%
+  select(dim1, dim2) %>% 
+  summarize_all(mean)
+
+ggp.sumap.labeled <- mapping.sumap %>% 
+  ggplot(aes(x = dim1, y = dim2, colour = hdbscan)) + 
+  geom_point(alpha = 0.3) + 
+  theme_bw() +
+  ggrepel::geom_label_repel(data = hdbscan.cent, 
+                            aes(label = hdbscan),
+                            label.size = 0.1) + 
+  guides(colour = FALSE) + 
+  labs(title = "supervised UMAP + HDBSCAN") 
+
+
+ggsave(ggp.sumap.labeled, filename =  "./output/image.files/420_map_sumap_labeled.png",
+    height = 7, width = 7)
+
+```
+
+![](output/image.files/420_map_sumap_labeled.png)
+
+```{r, fig.height=7, fig.width=7, results="hide"}
+ggp.tsne.sumap <- gridExtra::arrangeGrob(
+  ggp.tsne, 
+  ggp.umap,
+  ggp.sumap, 
+  ggp.sumap.labeled,
+  ncol = 2)
+
+ggsave(ggp.tsne.sumap, filename =  "./output/image.files/420_tSNE_sumap.png",
+    height = 10, width = 10)
+
+```
+
+![](output/image.files/420_tSNE_sumap.png)
+
+
+# View rules in a cluster
+
+NOTE: observations with `hdbscan == 0` are as noise by hDBSCAN.
+
+```{r, eval=TRUE}
+clust.id = 1
+sample.n = 12
+
+target <- mapping.sumap %>% 
+  filter(hdbscan == clust.id) %>% 
+  arrange(desc(pred))
+
+sw <- list(NULL)
+for(i in 1:sample.n){
+  idx = target$id[i]
+  
+  sw[[i]]  <- waterfallBreakdown(
+    breakdown = unlist(approxcontrib.xgb[idx, ]),
+    type = "binary",
+    labels = paste(colnames(approxcontrib.xgb), 
+                   c(train.matrix[idx, ],""), sep =" = ")) +
+    ggtitle(sprintf("predict = %.04f\nweight = %.04f",
+                    target$predict[i], target$weight[i]))
+}
+
+ggp.sw <- gridExtra::arrangeGrob(grobs = sw, ncol = 4)
+ggsave(ggp.sw, height = 9,
+       filename = "./output/image.files/420_rules_cl1.png")
+```
+
+![](./output/image.files/420_rules_cl1.png)
+## summarise for each contribution
+
+```{r}
+# 
+require(ggridges)
+
+# approxcontrib.xgb %>% str
+feature.value.long <- train.matrix %>% 
+  scale() %>%
+  data.frame() %>% 
+  mutate(id = as.character(1:n())) %>% 
+  gather(key = feature, value = value, -id)
+
+feature.impact.long <- approxcontrib.xgb[target$id, ] %>% 
+  data.frame(id = as.character(target$id)) %>% 
+  select(-BIAS) %>% 
+  gather(key = feature, value = impact, -id) %>% 
+  left_join(feature.value.long, by = c("id", "feature")) %>% 
+  mutate(feature = factor(feature))
+
+
+
+ggp.impact <- feature.impact.long %>% 
+  ggplot(aes(x = impact, y = feature, point_color = value, fill = feature))+
+  geom_density_ridges(
+    jittered_points = TRUE, 
+    position = "raincloud",
+    alpha = 0.7, 
+    scale = 0.9
+  ) +
+  guides(label = FALSE,colour = FALSE) + 
+  scale_color_gradient(low="#FFCC33", high="#6600CC", labels=c("Low","High")) +
+  theme(legend.position = 'none') +
+  labs(title = "feature contribution", x="", y="")
+
+ggp.contribution <- feature.impact.long %>% 
+  ggplot(aes(x = value, y = feature, point_color = value, fill = feature))+
+  geom_density_ridges(
+    jittered_points = TRUE, 
+    position = "raincloud",
+    alpha = 0.7, 
+    scale = 0.9
+  ) +
+  guides(label = FALSE,colour = FALSE) + 
+  scale_color_gradient(low="#FFCC33", high="#6600CC", labels=c("Low","High")) +
+  theme(legend.position = 'none') +
+  labs(title = "feature value", x="", y="")
+
+ggp.fcl <- gridExtra::arrangeGrob(grobs = list(ggp.contribution, ggp.impact), ncol = 2)
+ggsave(ggp.fcl, width = 9, height = 6,
+       filename = "./output/image.files/420_stratified_clustering_cl1.png")
+
+```
+
+![](./output/image.files/420_stratified_clustering_cl1.png)
+

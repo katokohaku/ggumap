@@ -4,7 +4,7 @@
 \name{ggumap-package}
 \alias{ggumap}
 \alias{ggumap-package}
-\title{ggumap: ggplot interfase for Uniform Manifold Approximation and Projection (UMAP)}
+\title{ggumap: ggplot interfases for Uniform Manifold Approximation and Projection (UMAP)}
 \description{
 ggplot interfase for Uniform Manifold Approximation and Projection (UMAP).
     Provides 2D plot for UMAP, and adding clustered-labels based on hierarchical Density-based spatial clustering of applications with noise (HDBSCAN).
