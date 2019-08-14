@@ -287,3 +287,18 @@ ggsave(ggp.fcl, width = 9, height = 6,
 
 ![](./output/image.files/420_stratified_clustering_cl1.png)
 
+# Details
+
+## Installation
+
+You can install the **ggumap** package from [GitHub](https://github.com/katokohaku/ggumap).
+
+```{r eval=FALSE}
+ # if you have not installed "devtools" package
+install.packages("devtools")
+
+devtools::install_github("katokohaku/ggumap")
+```
+
+The source code for **ggumap** package is available on GitHub at
+- https://github.com/katokohaku/ggumap.
