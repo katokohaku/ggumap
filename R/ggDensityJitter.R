@@ -1,6 +1,6 @@
-#' rain could plot wrapper for ggRidges package
+#' wrapper for density plot with jittered x points using ggRidges package
 #'
-#' template wrapper ggridges::geom_density_ridges(., jittered_points = TRUE, position = "raincloud")
+#' template wrapper ggridges::geom_density_ridges(., jittered_points = TRUE, position = position_points_jitter())
 #'
 #' @param .data a data frame or a matrix
 #' @param title title text passed to labs(title = title, ...)
@@ -27,9 +27,9 @@
 #' @import ggplot2
 #
 
-ggRaincloud <- function(.data, title = "", xlab = "", ylab = "", scaled = TRUE,
-                        .alpha = 0.3, .scale = 0.9,
-                        .verbose = TRUE, ...) {
+ggDensityJitter <- function(.data, title = "", xlab = "", ylab = "", scaled = TRUE,
+                            .jitter.width = 0.1, .alpha = 0.3, .scale = 0.9,
+                            .verbose = TRUE, ...) {
   stopifnot(!missing(.data))
 
   mutate_all2 <- dplyr::mutate_all
@@ -53,7 +53,9 @@ ggRaincloud <- function(.data, title = "", xlab = "", ylab = "", scaled = TRUE,
   ggp.raincloud <- feature.value.long %>%
     ggplot(aes(x = value, y = feature, color = feature, fill = feature))+
     ggridges::geom_density_ridges(
-      jittered_points = TRUE, position = "raincloud", alpha = .alpha, scale = .scale) +
+      jittered_points = TRUE,
+      position = ggridges::position_points_jitter(width = .jitter.width, height = 0),
+      point_shape = '|', point_size = 3, point_alpha = 1, alpha = 0.7, scale = .scale) +
     theme(legend.position = 'none', ...) +
     labs(title = title, x=xlab, y=ylab)
 
