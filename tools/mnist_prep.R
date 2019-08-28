@@ -1,7 +1,7 @@
 require(tidyverse)
 require(data.table)
 
-# mnist <- fread("tools/mnist_test.csv", data.table = FALSE)
+# mnist <- fread("tools/mnist_train.csv", data.table = FALSE)
 # usethis::use_data(mnist)
 # save(mnist, file = "data/mnist.rda")
 

@@ -1,0 +1,188 @@
+---
+author: "Satoshi Kato"
+title: "Un supervised clustering using UMAP with {uwot} package"
+date: "`r format(Sys.time(), '%Y/%m/%d')`"
+output:
+  html_document:
+    fig_caption: yes
+    pandoc_args:
+      - --from
+      - markdown+autolink_bare_uris+tex_math_single_backslash-implicit_figures
+    keep_md: yes
+    toc: yes
+  word_document:
+    toc: yes
+    toc_depth: 3
+  pdf_document:
+    toc: yes
+    toc_depth: 3
+editor_options: 
+  chunk_output_type: inline
+---
+
+```{r setup, include=FALSE}
+knitr::opts_knit$set(progress = TRUE, 
+                     verbose  = TRUE, 
+                     root.dir = ".")
+
+knitr::opts_chunk$set(collapse = TRUE, 
+                      comment = "", 
+                      message = TRUE, 
+                      warning = FALSE, 
+                      include = TRUE,
+                      echo    = TRUE)
+
+set.seed(1)
+```
+
+```{r install.requirements, eval = FALSE}
+install.packages("Rtsne", dependencies = TRUE)
+install.packages("uwot", dependencies = TRUE)
+install.packages("dbscan", dependencies = TRUE)
+install.packages("ggrepel", dependencies = TRUE)
+
+source("./R/waterfallBreakdown.R")
+source("./R/ggRaincloud.R")
+
+```
+
+```{r require.packages, message=FALSE}
+require(tidyverse)
+require(magrittr)
+
+```
+
+# Preparation 
+
+```{r}
+set.seed(1)
+
+
+require(Rtsne)
+require(uwot)
+library(ggdendro)
+require(ggrepel)
+# 
+require(ggridges)
+require(ggumap)
+
+
+load("../data/mnist.rda")
+str(mnist, 0)
+mnist.s <- mnist %>% sample_frac(1)  
+.data <- mnist.s[, -1]
+labels <- mnist.s[, 1]
+
+n <- NROW(.data)
+.data %>% str(0)
+labels %>% table()
+
+```
+
+
+# clustering of observation based on breakdown
+
+## dimension reduction using UMAP (unsupervised)
+
+according to :
+
+- https://rdrr.io/cran/uwot/man/umap.html
+- https://github.com/lmcinnes/umap
+
+```{r}
+system.time(
+  mnist.umap <- .data %>% 
+    uwot::umap(metric = "euclidean", n_neighbors=10, min_dist=0.001)
+  # uwot::umap(metric = "cosine", n_neighbors=10, min_dist=0.001)
+  
+)
+# mnist.umap %>% str
+
+mapping.umap <- data.frame(
+  id    = 1:NROW(mnist.umap),
+  dim1  = mnist.umap[, 1],
+  dim2  = mnist.umap[, 2],
+  label = labels)
+# mapping.umap %>% str
+
+
+labels.cent <- mapping.umap %>% 
+  dplyr::group_by(label) %>%
+  select(dim1, dim2) %>% 
+  summarize_all(mean)
+
+ggp.umap <- mapping.umap %>% 
+  ggplot(aes(x = dim1, y = dim2, colour = as.factor(label))) + 
+    geom_point(alpha = 0.3) + 
+  theme_bw() +
+  ggrepel::geom_label_repel(data = labels.cent, 
+                            aes(label = label),
+                            label.size = 0.1) + 
+  guides(colour = FALSE) + 
+  labs(title = "UMAP (with TRUE labels)") 
+# scale_color_gradient2(midpoint=0.5, low="blue", mid="gray", high="red") + 
+
+
+ggp.umap
+
+```
+
+
+## Hierarchical Density-based spatial clustering of applications with noise (HDBSCAN)
+
+Reference:
+
+- https://umap-learn.readthedocs.io/en/latest/clustering.html
+- https://hdbscan.readthedocs.io/en/latest/how_hdbscan_works.html
+
+according to:
+
+https://cran.r-project.org/web/packages/dbscan/vignettes/hdbscan.html
+
+`minPts` not only acts as a minimum cluster size to detect, but also as a "smoothing" factor of the density estimates implicitly computed from HDBSCAN.
+
+```{r }
+# install.packages("dbscan", dependencies = TRUE)
+require(dbscan)
+
+# mapping.umap %>% str
+cl.hdbscan <- mapping.umap %>% 
+  select(dim1, dim2) %>% 
+  hdbscan(minPts = 15)
+cl.hdbscan %>% print
+
+dbscan:::plot.hdbscan(cl.hdbscan, show_flat = TRUE)
+
+```
+
+```{r, fig.height=4, fig.width=8, results="hide"}
+# install.packages("ggrepel", dependencies = TRUE)
+require(ggrepel)
+
+mapping.umap$hdbscan <- factor(cl.hdbscan$cluster)
+
+hdbscan.cent <- mapping.umap %>% 
+  filter(hdbscan != 0) %>% 
+  dplyr::group_by(hdbscan) %>%
+  select(dim1, dim2) %>% 
+  summarize_all(mean)
+
+ggp.umap.clust <- mapping.umap %>% 
+  ggplot(aes(x = dim1, y = dim2, colour = hdbscan)) + 
+  geom_point(alpha = 0.3) + 
+  theme_bw() +
+  ggrepel::geom_label_repel(data = hdbscan.cent, 
+                            aes(label = hdbscan),
+                            label.size = 0.1) + 
+  guides(colour = FALSE) + 
+  labs(title = "UMAP + HDBSCAN (estimated cluster)") 
+
+ggp.compare <- gridExtra::grid.arrange(grobs = list(
+  ggp.umap, ggp.umap.clust),
+  ncol = 2)
+
+ggp.compare
+
+```
+
+
