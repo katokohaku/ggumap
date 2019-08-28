@@ -91,9 +91,19 @@ custom.config$min_dist = 0.01
 
 ```
 
+```{r, eval=FALSE}
+require(reticulate)
+# py_install("pandas")
+# py_install("scikit-learn")
+# py_install("matplotlib")
+# py_install("umap-learn")
+
+
+```
 
 ```{r}
 require(reticulate)
+reticulate::py_config()
 
 system.time(
   mnist.umap <- .data %>% 
