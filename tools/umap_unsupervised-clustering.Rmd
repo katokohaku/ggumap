@@ -37,12 +37,9 @@ set.seed(1)
 
 ```{r install.requirements, eval = FALSE}
 install.packages("Rtsne", dependencies = TRUE)
-install.packages("uwot", dependencies = TRUE)
+install.packages("umap", dependencies = TRUE)
 install.packages("dbscan", dependencies = TRUE)
 install.packages("ggrepel", dependencies = TRUE)
-
-source("./R/waterfallBreakdown.R")
-source("./R/ggRaincloud.R")
 
 ```
 
@@ -51,7 +48,7 @@ require(tidyverse)
 require(magrittr)
 
 require(Rtsne)
-require(uwot)
+require(umap)
 library(ggdendro)
 require(ggrepel)
 # 
@@ -78,28 +75,37 @@ labels %>% table()
 ```
 
 
-# clustering of observation based on breakdown
-
-## dimension reduction using UMAP (unsupervised)
+# dimension reduction using UMAP (unsupervised)
 
 according to :
 
-- https://rdrr.io/cran/uwot/man/umap.html
-- https://github.com/lmcinnes/umap
+- https://cran.r-project.org/web/packages/umap/vignettes/umap.html
+- https://cran.r-project.org/web/packages/umap/vignettes/umap_learn.html
+
+## Configuration objects
 
 ```{r}
+umap.defaults
+custom.config = umap.defaults
+custom.config$min_dist = 0.01
+
+```
+
+
+```{r}
+require(reticulate)
+
 system.time(
   mnist.umap <- .data %>% 
-    uwot::umap(metric = "euclidean", n_neighbors=10, min_dist=0.001)
+    umap::umap(config = custom.config, method="umap-learn")
   # uwot::umap(metric = "cosine", n_neighbors=10, min_dist=0.001)
-  
 )
-# mnist.umap %>% str
+mnist.umap %>% str(2)
 
 mapping.umap <- data.frame(
-  id    = 1:NROW(mnist.umap),
-  dim1  = mnist.umap[, 1],
-  dim2  = mnist.umap[, 2],
+  id    = 1:NROW(mnist.umap$layout),
+  dim1  = mnist.umap$layout[, 1],
+  dim2  = mnist.umap$layout[, 2],
   label = labels)
 # mapping.umap %>% str
 
@@ -146,7 +152,7 @@ require(dbscan)
 # mapping.umap %>% str
 cl.hdbscan <- mapping.umap %>% 
   select(dim1, dim2) %>% 
-  hdbscan(minPts = 50)
+  hdbscan(minPts = 15)
 cl.hdbscan %>% print
 
 dbscan:::plot.hdbscan(cl.hdbscan, show_flat = TRUE)
