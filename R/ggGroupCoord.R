@@ -52,35 +52,3 @@ ggGroupCoord <- function(
   return(ggp.coord)
 }
 
-require(uwot)
-require(tidyverse)
-
-# devtools::install_github("jlmelville/snedata")
-# fashion <- snedata::download_fashion_mnist()
-# save(mnist, file = "data/mnist.rda")
-load("data/mnist.rda")
-
-# res_sumap <- umap(fashion, y = fashion$Description, verbose = TRUE)
-res_sumap <- umap(iris, y = iris$Species, verbose = TRUE)
-
-# simple plot
-ggGroupCoord(res_sumap)
-# plot with color
-ggGroupCoord(res_sumap, .colour = iris$Species, title = "with color", .size = 2)
-# plot with group label
-ggGroupCoord(res_sumap, group.label = iris$Species, title = "with group label")
-
-
-
-ggp.umap
-
-
-ggsave(fashion_sumap_ggp$plofilename, filename = "hoge.png")
-
-
-fashion_train <- head(fashion, 60000)
-fashion_test <- tail(fashion, 10000)
-
-fashion_sumap_train <- umap(fashion_train, y = fashion_train$Description,
-                            ret_model = TRUE, verbose = TRUE)
-
